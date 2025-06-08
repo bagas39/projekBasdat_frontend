@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Karyawan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+    .sidebar { background-color: #1f2937; }
+    .sidebar a.active { background-color: #374151; font-weight: 600; }
+    .data-section { background-color: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); }
+    .table-container { max-height: 450px; overflow-y: auto; margin-bottom: 1rem; }
+    th.sortable-header { cursor: pointer; }
+    th.sortable-header .sort-arrow { display: inline-block; margin-left: 5px; opacity: 0.5; }
+    th.sortable-header .sort-arrow.asc::after { content: "▲"; }
+    th.sortable-header .sort-arrow.desc::after { content: "▼"; }
+    .load-more-btn { display: none; width: 100%; padding: 0.75rem 1rem; background-color: #3b82f6; color: white; text-align: center; border-radius: 0.375rem; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
+  </style>
+</head>
+<body class="flex min-h-screen">
+  <aside class="sidebar w-64 text-gray-100 p-6 space-y-6 hidden md:block">
+    <div class="text-2xl font-semibold text-center">SALES ERP</div>
+    <div class="text-center">
+      <img src="https://placehold.co/60x60/e2e8f0/334155?text=Admin" alt="Avatar Pengguna" class="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-gray-500">
+      <span class="text-sm">Admin User</span>
+    </div>
+    <nav>
+      <ul class="space-y-2">
+        <li> <li><a href="./dashboard.html" data-page="dashboard" class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"><span>Dasbor</span></a></li>
+            <a href="./data_penjualan.html" data-page="penjualan" class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"><span>Data Penjualan</span></a></li>
+            <li><a href="./pelanggan.html" data-page="pelanggan" class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"><span>Pelanggan</span></a></li>
+            <li><a href="./karyawan.html" data-page="karyawan" class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"><span>Karyawan</span></a></li>
+            <li><a href="./items.html" data-page="items" class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"><span>Manajemen Item</span></a></li>
+            <li><a href="./users.html" data-page="users" class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"><span>Manajemen Pengguna</span></a></li>
+            <li><a href="./login.html" class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"><span>Logout</span></a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="flex-1 p-6 md:p-8 space-y-6">
+    <header class="flex flex-col md:flex-row justify-between items-center">
+      <h1 class="text-3xl font-semibold text-gray-800">Manajemen Data Karyawan</h1>
+    </header>
+
+    <div id="employeeDataView" class="data-section">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold text-gray-800 sr-only">Tabel Karyawan</h2>
+        <input type="text" id="employeeTableFilterInput" onkeyup="renderTable()" placeholder="Filter berdasarkan nama karyawan..." class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+      </div>
+      <div class="table-container">
+        <table class="min-w-full divide-y divide-gray-200" id="employeeInteractiveTable">
+          <thead class="bg-gray-50">
+            <tr>
+              <th onclick="sortEmployeeTable(0, 'string')" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama <span class="sort-arrow"></span></th>
+              <th onclick="sortEmployeeTable(1, 'string')" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telepon <span class="sort-arrow"></span></th>
+              <th onclick="sortEmployeeTable(2, 'string')" class="sortable-header px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Outlet <span class="sort-arrow"></span></th>
+            </tr>
+          </thead>
+          <tbody id="employeeDataTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+      <div id="noDataEmployeeTable" class="text-center py-4 text-gray-500 hidden">Tidak ada data karyawan.</div>
+      <button id="loadMoreEmployeesButton" class="load-more-btn mt-4">Muat Lebih Banyak</button>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentPage = window.location.pathname.split('/').pop();
+      let activePage = '';
+      if (currentPage.includes('dashboard')) activePage = 'dashboard';
+      else if (currentPage.includes('penjualan')) activePage = 'penjualan';
+      else if (currentPage.includes('pelanggan')) activePage = 'pelanggan';
+      else if (currentPage.includes('karyawan')) activePage = 'karyawan';
+      
+      if (activePage) {
+        const link = document.querySelector(`.sidebar a[data-page='${activePage}']`);
+        if (link) link.classList.add('active');
+      }
+    });
+
+    let currentEmployeeSortColumn = -1;
+    let currentEmployeeSortDirection = 'asc';
+
+    function populateEmployeeTable(employeesToRender) {
+        const tableBody = document.getElementById('employeeDataTableBody');
+        const noDataMsg = document.getElementById('noDataEmployeeTable');
+        tableBody.innerHTML = '';
+        
+        if (employeesToRender && employeesToRender.length > 0) {
+          noDataMsg.classList.add('hidden');
+        } else {
+            noDataMsg.textContent = document.getElementById("employeeTableFilterInput").value === "" ? "Tidak ada data karyawan." : "Tidak ada karyawan yang cocok.";
+            noDataMsg.classList.remove('hidden');
+        }
+    }
+    
+    function renderTable() {
+      populateEmployeeTable([]);
+    }
+
+    function updateEmployeeSortArrows(columnIndex) {
+      const headers = document.querySelectorAll("#employeeInteractiveTable th .sort-arrow");
+      headers.forEach((arrow, index) => {
+        arrow.className = 'sort-arrow';
+        if (index === columnIndex) arrow.classList.add(currentEmployeeSortDirection);
+      });
+    }
+
+    function sortEmployeeTable(columnIndex) {
+      if (currentEmployeeSortColumn === columnIndex) {
+        currentEmployeeSortDirection = currentEmployeeSortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentEmployeeSortColumn = columnIndex;
+        currentEmployeeSortDirection = 'asc';
+      }
+      updateEmployeeSortArrows(columnIndex);
+      renderTable();
+    }
+    
+    function showInitialState() {
+        renderTable();
+        document.getElementById('loadMoreEmployeesButton').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      showInitialState();
+    });
+  </script>
+</body>
+</html>
